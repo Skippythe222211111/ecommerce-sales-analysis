@@ -1,0 +1,9 @@
+# Source data and generated local load files are never committed.
+/data/*
+!/data/.gitkeep
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage

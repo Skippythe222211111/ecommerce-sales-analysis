@@ -1,0 +1,20 @@
+{
+  "period_start": "2010-12-01",
+  "period_end": "2011-12-09",
+  "positive_line_sales_gbp": 10642110.8,
+  "positive_sales_orders": 19960,
+  "average_positive_order_value_gbp": 533.17,
+  "units_in_positive_sale_lines": 5572420.0,
+  "customers_with_positive_sale_lines": 4338,
+  "return_or_adjustment_lines": 1336,
+  "return_or_adjustment_lines_with_positive_price": 0,
+  "return_or_adjustment_value_gbp_abs": 0.0,
+  "cancellation_lines_with_negative_quantity": 9251,
+  "cancellation_value_gbp_abs": 893979.73,
+  "countries_in_positive_sales": 38,
+  "product_codes_in_positive_sales": 3922,
+  "sales_definition": "Valid non-cancellation rows with quantity > 0, unit_price > 0, invoice number and date present; sum(quantity * unit_price).",
+  "return_definition": "Count non-cancellation rows with quantity < 0 and valid invoice/date. Monetary value uses only rows with unit_price > 0 and is not a confirmed refund amount.",
+  "cancellation_definition": "Rows whose invoice number starts with C; monetary total uses only negative-quantity rows with positive unit price and valid invoice/date.",
+  "warning": "Positive-line sales are not net revenue after returns or cancellations. No costs, margin, profit or discount fields are available."
+}

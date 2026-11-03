@@ -1,0 +1,38 @@
+{
+  "raw_rows": 541909,
+  "exact_duplicate_rows_removed": 5268,
+  "deduplicated_rows": 536641,
+  "missing_values_raw": {
+    "invoice_no": 0,
+    "stock_code": 0,
+    "description": 1454,
+    "quantity": 0,
+    "invoice_date": 0,
+    "unit_price": 0,
+    "customer_id": 135080,
+    "country": 0
+  },
+  "rows_by_class_after_deduplication": {
+    "cancellation": 9251,
+    "nonpositive_price": 1176,
+    "return_or_adjustment": 1336,
+    "sale": 524878
+  },
+  "negative_quantity_rows": 10587,
+  "zero_quantity_rows": 0,
+  "nonpositive_or_missing_price_rows": 2512,
+  "noninteger_quantity_rows": 0,
+  "return_or_adjustment_rows_with_nonpositive_price": 1336,
+  "positive_unit_price_p99_gbp": 18.0,
+  "positive_unit_price_p999_gbp": 208.32,
+  "maximum_positive_unit_price_gbp": 38970.0,
+  "positive_sale_unit_price_p99_gbp": 16.98,
+  "positive_sale_unit_price_p999_gbp": 165.02,
+  "maximum_positive_sale_unit_price_gbp": 13541.33,
+  "maximum_positive_sale_line_quantity": 80995.0,
+  "invalid_or_missing_invoice_date_rows": 0,
+  "invalid_or_missing_invoice_number_rows": 0,
+  "cancellation_rows_with_nonnegative_quantity": 0,
+  "sale_rows_missing_customer_id": 132186,
+  "sale_rows_missing_country": 0
+}
