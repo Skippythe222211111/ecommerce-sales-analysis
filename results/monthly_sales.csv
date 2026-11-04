@@ -1,4 +1,4 @@
-month,positive_line_sales_gbp,positive_sales_orders,positive_sales_lines,units_sold,return_or_adjustment_value_gbp_abs,cancellation_value_gbp_abs,aov_gbp,mom_growth_pct
+﻿month,positive_line_sales_gbp,positive_sales_orders,positive_sales_lines,units_sold,return_or_adjustment_value_gbp_abs,cancellation_value_gbp_abs,aov_gbp,mom_growth_pct
 2010-12,821452.73,1559,40991,358019,0.0,74729.12,526.91,
 2011-01,689811.61,1086,34060,387099,0.0,131363.05,635.19,-16.03
 2011-02,522545.56,1100,26882,282934,0.0,25519.15,475.04,-24.25

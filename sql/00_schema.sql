@@ -49,7 +49,7 @@ SELECT
         WHEN quantity < 0 AND invoice_no IS NOT NULL AND invoice_date IS NOT NULL
             THEN 'return_or_adjustment'
         WHEN quantity = 0 THEN 'zero_quantity'
-        WHEN unit_price <= 0 OR unit_price IS NULL THEN 'nonpositive_price'
+        WHEN unit_price <= 0 THEN 'nonpositive_price'
         WHEN quantity > 0 AND unit_price > 0
              AND invoice_no IS NOT NULL AND invoice_date IS NOT NULL
             THEN 'sale'

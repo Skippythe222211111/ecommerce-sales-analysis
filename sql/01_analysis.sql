@@ -26,10 +26,10 @@ SELECT
         WHERE line_type = 'cancellation' AND quantity < 0 AND unit_price > 0
           AND invoice_no IS NOT NULL AND invoice_date IS NOT NULL
     ) AS cancellation_lines_with_negative_quantity,
-    ROUND(SUM(ABS(line_value)) FILTER (
+    COALESCE(ROUND(SUM(ABS(line_value)) FILTER (
         WHERE line_type = 'cancellation' AND quantity < 0 AND unit_price > 0
           AND invoice_no IS NOT NULL AND invoice_date IS NOT NULL
-    ), 2) AS cancellation_value_gbp_abs,
+    ), 2), 0) AS cancellation_value_gbp_abs,
     COUNT(DISTINCT country) FILTER (WHERE line_type = 'sale') AS countries_in_positive_sales,
     COUNT(DISTINCT stock_code) FILTER (WHERE line_type = 'sale') AS product_codes_in_positive_sales
 FROM retail.online_retail_clean;
@@ -89,24 +89,47 @@ GROUP BY
     raw_missing.missing_invoice_date_rows;
 
 -- 3. Monthly positive-line sales, returns/adjustments and cancellation lines.
+-- The month set comes from valid sale lines only (same as the Python export);
+-- returns and cancellations are left-joined onto it and default to 0.
 -- Month-over-month growth denominator is previous month's positive-line sales.
-WITH monthly AS (
+WITH monthly_sales AS (
     SELECT
         DATE_TRUNC('month', invoice_date)::DATE AS month,
-        ROUND(SUM(line_value) FILTER (WHERE line_type = 'sale'), 2) AS positive_line_sales_gbp,
-        COUNT(DISTINCT invoice_no) FILTER (WHERE line_type = 'sale') AS positive_sales_orders,
-        COUNT(*) FILTER (WHERE line_type = 'sale') AS positive_sales_lines,
-        SUM(quantity) FILTER (WHERE line_type = 'sale') AS units_sold,
-        ROUND(SUM(ABS(line_value)) FILTER (
-            WHERE line_type = 'return_or_adjustment' AND unit_price > 0
-        ), 2)
-            AS return_or_adjustment_value_gbp_abs,
-        ROUND(SUM(ABS(line_value)) FILTER (
-            WHERE line_type = 'cancellation' AND quantity < 0 AND unit_price > 0
-        ), 2) AS cancellation_value_gbp_abs
+        ROUND(SUM(line_value), 2) AS positive_line_sales_gbp,
+        COUNT(DISTINCT invoice_no) AS positive_sales_orders,
+        COUNT(*) AS positive_sales_lines,
+        SUM(quantity) AS units_sold
     FROM retail.online_retail_clean
-    WHERE invoice_date IS NOT NULL
+    WHERE line_type = 'sale'
     GROUP BY 1
+), monthly_returns AS (
+    SELECT
+        DATE_TRUNC('month', invoice_date)::DATE AS month,
+        ROUND(SUM(ABS(line_value)), 2) AS return_or_adjustment_value_gbp_abs
+    FROM retail.online_retail_clean
+    WHERE line_type = 'return_or_adjustment' AND unit_price > 0
+      AND invoice_date IS NOT NULL
+    GROUP BY 1
+), monthly_cancellations AS (
+    SELECT
+        DATE_TRUNC('month', invoice_date)::DATE AS month,
+        ROUND(SUM(ABS(line_value)), 2) AS cancellation_value_gbp_abs
+    FROM retail.online_retail_clean
+    WHERE line_type = 'cancellation' AND quantity < 0 AND unit_price > 0
+      AND invoice_date IS NOT NULL
+    GROUP BY 1
+), monthly AS (
+    SELECT
+        s.month,
+        s.positive_line_sales_gbp,
+        s.positive_sales_orders,
+        s.positive_sales_lines,
+        s.units_sold,
+        COALESCE(r.return_or_adjustment_value_gbp_abs, 0) AS return_or_adjustment_value_gbp_abs,
+        COALESCE(c.cancellation_value_gbp_abs, 0) AS cancellation_value_gbp_abs
+    FROM monthly_sales AS s
+    LEFT JOIN monthly_returns AS r USING (month)
+    LEFT JOIN monthly_cancellations AS c USING (month)
 ), with_previous AS (
     SELECT *, LAG(positive_line_sales_gbp) OVER (ORDER BY month) AS previous_month_sales_gbp
     FROM monthly
@@ -117,8 +140,8 @@ SELECT
     positive_sales_orders,
     positive_sales_lines,
     units_sold,
-    COALESCE(return_or_adjustment_value_gbp_abs, 0) AS return_or_adjustment_value_gbp_abs,
-    COALESCE(cancellation_value_gbp_abs, 0) AS cancellation_value_gbp_abs,
+    return_or_adjustment_value_gbp_abs,
+    cancellation_value_gbp_abs,
     ROUND(
         100 * (positive_line_sales_gbp - previous_month_sales_gbp)
         / NULLIF(previous_month_sales_gbp, 0), 2
@@ -137,7 +160,7 @@ SELECT
 FROM retail.online_retail_clean
 WHERE line_type = 'sale'
 GROUP BY stock_code
-ORDER BY positive_line_sales_gbp DESC, stock_code
+ORDER BY SUM(line_value) DESC, stock_code
 LIMIT 10;
 
 -- 5. Top countries. Sales amount includes valid positive lines; order count is
@@ -150,5 +173,5 @@ SELECT
 FROM retail.online_retail_clean
 WHERE line_type = 'sale' AND country IS NOT NULL
 GROUP BY country
-ORDER BY positive_line_sales_gbp DESC, country
+ORDER BY SUM(line_value) DESC, country
 LIMIT 10;
