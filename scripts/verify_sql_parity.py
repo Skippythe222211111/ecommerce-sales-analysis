@@ -6,6 +6,9 @@ results/*.csv produced by src/analysis.py.
 
 Usage:
     python scripts/verify_sql_parity.py --dsn "host=127.0.0.1 port=55432 user=postgres dbname=ecommerce_retail"
+
+The psql executable is taken from the PSQL environment variable, then PATH, and
+finally from the standard Windows installation directory (PostgreSQL 18).
 """
 from __future__ import annotations
 
@@ -13,6 +16,7 @@ import argparse
 import io
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -23,7 +27,28 @@ ROOT = Path(__file__).resolve().parents[1]
 SQL_FILE = ROOT / "sql" / "01_analysis.sql"
 RESULTS = ROOT / "results"
 
-PSQL = r"C:\Program Files\PostgreSQL\18\bin\psql.exe"
+WINDOWS_PSQL = Path(r"C:\Program Files\PostgreSQL\18\bin\psql.exe")
+
+
+def find_psql() -> str:
+    """Locate psql portably, keeping the old Windows path as a fallback."""
+    override = os.environ.get("PSQL")
+    if override:
+        return override
+    on_path = shutil.which("psql")
+    if on_path:
+        return on_path
+    candidates = [WINDOWS_PSQL]
+    install_root = Path(r"C:\Program Files\PostgreSQL")
+    if install_root.is_dir():
+        candidates.extend(sorted(install_root.glob(r"*\bin\psql.exe"), reverse=True))
+    for candidate in candidates:
+        if candidate.is_file():
+            return str(candidate)
+    raise SystemExit(
+        "psql не найден: установите клиент PostgreSQL, добавьте его в PATH "
+        "или задайте переменную окружения PSQL."
+    )
 
 
 def sections(sql_text: str) -> dict[int, str]:
@@ -41,7 +66,7 @@ def sections(sql_text: str) -> dict[int, str]:
 def run_query(dsn: str, query: str) -> pd.DataFrame:
     copy = f"COPY (\n{query}\n) TO STDOUT WITH (FORMAT csv, HEADER true);"
     proc = subprocess.run(
-        [PSQL, dsn, "-v", "ON_ERROR_STOP=1", "-f", "-"],
+        [find_psql(), dsn, "-v", "ON_ERROR_STOP=1", "-f", "-"],
         input=copy,
         capture_output=True,
         text=True,
